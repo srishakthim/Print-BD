@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const userModel = require('../schema/userSchema');
 const ErrorHandler = require('../utils/ErrorHandler');
 const { default: mongoose } = require('mongoose');
+const festivalModel = require('../schema/festivalSchema');
 
 
 function UserFunction() {
@@ -14,6 +15,7 @@ function UserFunction() {
 
 // api/v1/user/list
 UserFunction.prototype.AllUser = async function (req, res, next) {
+    console.log("Request", req);
     const { role } = req.query;
 
     try {
@@ -72,9 +74,13 @@ UserFunction.prototype.GetUserByID = async function (req, res, next) {
 //api/v1/user/create
 UserFunction.prototype.CreateUser = async function (req, res, next) {
     try {
-        const { password } = req.body;
+        const { email, username, password } = req.body;
+        let isUserExists = await userModel.findOne({ email })
+        if (isUserExists) {
+            res.status(400).json({ "status": false, message: "User already exists" });
+        };
         const hash = await bcrypt.hash(password, 10);
-        const user = await userModel.create({ ...req.body, password: hash });
+        const user = await userModel.create({ ...req.body, password: hash, role: "User" });
 
         res.json({ status: true, message: user });
     }
@@ -112,6 +118,21 @@ UserFunction.prototype.UpdateUser = async function (req, res, next) {
     }
 
 };
+UserFunction.prototype.FetchFestivalList = async function (req, res, next) {
+    try {
+        const { skip = 0, take = 10 } = req.body;
+        const festivalList = await festivalModel.find().skip(skip).limit(take);
+        if (!festivalList) {
+            return res.status(400).json({ status: false, message: "Festival list is empty" })
+        }
+        return res.status(200).json({ status: false, data:festivalList })
+
+
+    } catch (error) {
+        next(new ErrorHandler(error.message, 500));
+    }
+}
+
 
 
 module.exports = UserFunction;

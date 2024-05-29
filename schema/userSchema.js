@@ -46,6 +46,14 @@ const userSchema = new mongoose.Schema({
     state:{
         type: String,
         required:[true,"Please Enter State"]
+    },
+    isLogged:{
+        type: Boolean,
+        required:[false,"Please Enter State"],
+        value:true
+    },
+    role:{
+        type:String
     }
     
 

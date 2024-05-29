@@ -8,9 +8,9 @@ const userRoute = require('./userRoute');
 const authRoute = require('./authRouter');
 
 // allRouter.use("/auth", authRoute);
-allRouter.use("/auth",authRoute)
-allRouter.use("/user",userRoute)
-allRouter.use("/ad",adsRoute);
+allRouter.use("/auth", authRoute)
+allRouter.use("/user", userRoute)
+allRouter.use("/ad", adsRoute);
 
 
 module.exports = allRouter;
