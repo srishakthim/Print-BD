@@ -97,40 +97,34 @@ UserFunction.prototype.UserSignIn = async function (req, res, next) {
 // api/v1/user/list
 UserFunction.prototype.AllUser = async function (req, res, next) {
     console.log("Request", req.body);
-    const { role } = req.query;
 
     try {
-        let commonMatchConditions = {
-            _id: { $ne: new mongoose.Types.ObjectId(req.user["_id"]) },
-            status: "Active",
-        };
-
-        let pipeline = [
-            {
-                $match: commonMatchConditions,
-            },
-            {
-                $addFields: {
-                    days_left: {
-                        $round: {
-                            $divide: [
-                                {
-                                    $subtract: ["$expire_date", new Date()],
-                                },
-                                1000 * 60 * 60 * 24,
-                            ],
-                        },
-                    },
-                },
-            },
-        ];
-
-        if (role == "Employee") {
-            pipeline[0].$match = { ...pipeline[0].$match, ref_id: req.user["ref_id"] };
+        const { skip = 0, take = 10 } = req.body;
+        const userList = await userModel.find().skip(skip).limit(take);
+        if (!userList) {
+            return res.status(400).json({ status: false, message: "User list is empty" })
         }
+        return res.status(200).json({
+            status: true, data: userList.map((user) => {
+                return {
+                    "isLogged": user?.isLogged,
+                    "_id": user?._id,
+                    "username": user?.username,
+                    "email": user?.email,
+                    "phone": user?.phone,
+                    "whatsapp": user?.whatsapp,
+                    "gst": user?.gst,
+                    "address1":user?.address1,
+                    "address2": user?.address2,
+                    "city": user?.city,
+                    "pincode":user?.pincode,
+                    "state": user?.state,
+                    "role":user?.role
+                }
+            })
+        })
 
-        const users = await userModel.aggregate(pipeline);
-        res.json({ status: true, message: users });
+
     } catch (error) {
         next(new ErrorHandler(error.message, 500));
     }
@@ -206,7 +200,7 @@ UserFunction.prototype.FetchFestivalList = async function (req, res, next) {
         if (!festivalList) {
             return res.status(400).json({ status: false, message: "Festival list is empty" })
         }
-        return res.status(200).json({ status: true, data:festivalList })
+        return res.status(200).json({ status: true, data: festivalList })
 
 
     } catch (error) {

@@ -4,14 +4,10 @@ const catchAsyncError = require("./catchAsyncError");
 const User = require("../schema/userSchema");
 
 exports.isAuthendicate = catchAsyncError(async (req, res, next) => {
-  console.log("Headers", req.headers);
+  console.log("Headers", req.body);
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(400).json({ message: "Token error", status: false });
-  }
+  const { token } = req.body;
 
-  const token = authHeader.split(" ")[1]; // Extract the token after "Bearer"
   console.log("Token: " + token);
   if (!token) {
     return res.status(400).json({ message: "Token error", status: false });
@@ -30,4 +26,32 @@ exports.authorizeRoles = (...roles) => {
     }
     next();
   };
+};
+exports.authenticateAndAuthorize = (...allowedRoles) => {
+  return catchAsyncError(async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    console.log("authHeader",authHeader);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(400).json({ message: 'Token is missing or invalid', status: false });
+    }
+
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id);
+
+      if (!user) {
+        return res.status(401).json({ message: 'User not found', status: false });
+      }
+
+      if (!allowedRoles.includes(user.role)) {
+        return res.status(403).json({ message: `Role ${user.role} is not allowed`, status: false });
+      }
+
+      req.user = user;
+      next();
+    } catch (error) {
+      return res.status(401).json({ message: 'Invalid token', status: false });
+    }
+  });
 };
