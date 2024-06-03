@@ -4,6 +4,10 @@ const UserFunction = new (require('../module/userModule'));
 
 
 // api/v1/user/
+userRoute.route("/usersignin").post(UserFunction.UserSignIn);
+
+userRoute.route("/usercreate").post(UserFunction.UserCreate);
+
 userRoute.route("/create").post(UserFunction.CreateUser);
 
 userRoute.route("/list").get(isAuthendicate, authorizeRoles("Admin","User"), UserFunction.AllUser);

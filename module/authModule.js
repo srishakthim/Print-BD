@@ -12,15 +12,33 @@ function AuthFunction() {
 }
 
 
+// AuthFunction.prototype.SignUp = async function (req, res, next) {
+//     console.log("Request", req.body);
+//     try {
+//         const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
+//         const hash = await bcrypt.hash(password, 10);
+//         const userExists = await userModel.findOne({ email });
+//         // if(userExists)
+//         if (!userExists) {
+//             const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "Admin" });
+//             sendToken(user, 201, res);
+//         }
+//         else {
+//             return res.status(400).json({ success: false, message: "User already exists" });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ success: false, message: error.message });
+//     }
+// }
 AuthFunction.prototype.SignUp = async function (req, res, next) {
     console.log("Request", req.body);
     try {
-        const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
+        const { username,email, password, } = req.body;
         const hash = await bcrypt.hash(password, 10);
         const userExists = await userModel.findOne({ email });
         // if(userExists)
         if (!userExists) {
-            const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "Admin" });
+            const user = await userModel.create({ username,email, password: hash  });
             sendToken(user, 201, res);
         }
         else {
@@ -35,10 +53,44 @@ AuthFunction.prototype.SignIn = async function (req, res, next) {
     try {
         const { email, password } = req.body;
 
+        // Define default email and password
+        const defaultEmail = "printadmin@gmail.com";
+        const defaultPassword = "printadmin";
+
         if (!email || !password) {
             return res.status(400).json({ success: false, message: "Email and Password are required" });
         }
 
+        // Check if the provided credentials match the default credentials
+        if (email === defaultEmail && password === defaultPassword) {
+            // Create a default user object
+            const defaultUser = {
+                email: defaultEmail,
+                username: "PrintAdmin",
+                getJwtToken: function() {
+                    // Generate a token for the default user
+                    // You should replace this with your actual token generation logic
+                    return "defaultUserToken";
+                },
+                isLogged: false,
+                save: async function() {
+                    // Simulate save operation for the default user
+                    return Promise.resolve();
+                }
+            };
+
+            // Check if the default user is already logged in
+            if (defaultUser.isLogged) {
+                return res.status(401).json({ success: false, message: "User Already Logged in another device" });
+            }
+
+            defaultUser.isLogged = true;
+            await defaultUser.save();
+            let token = defaultUser.getJwtToken();
+            return res.status(200).json({ success: true, message: "Logged in successfully", token: token, user: { email: defaultUser.email, username: defaultUser.username } });
+        }
+
+        // Proceed with the usual authentication process
         const user = await userModel.findOne({ email });
         if (!user) {
             return res.status(401).json({ success: false, message: "Invalid Email" });
@@ -60,6 +112,7 @@ AuthFunction.prototype.SignIn = async function (req, res, next) {
         res.status(500).json({ success: false, message: error.message });
     }
 }
+
 
 
 AuthFunction.prototype.ForgetPassword = async function (req, res, next) {
@@ -144,7 +197,7 @@ AuthFunction.prototype.FetchFestivalList = async function (req, res, next) {
         next(new ErrorHandler(error.message, 500));
     }
 }
-// get Festival
+// Edit Festival
 AuthFunction.prototype.EditFestival = async function (req, res, next) {
     try {
         const { id } = req.params;
@@ -170,6 +223,8 @@ AuthFunction.prototype.EditFestival = async function (req, res, next) {
         next(new ErrorHandler(error.message, 500));
     }
 }
+
+//Delete Festival
 AuthFunction.prototype.DeleteFestival = async function (req, res, next) {
     try {
         const { id } = req.params;

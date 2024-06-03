@@ -50,12 +50,12 @@ const userSchema = new mongoose.Schema({
     isLogged:{
         type: Boolean,
         required:[false,"Please Enter State"],
-        value:true
+        default:false
     },
     role:{
         type:String
-    }
-    
+    },
+    // image: String 
 
 })
 

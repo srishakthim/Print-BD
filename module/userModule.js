@@ -3,19 +3,100 @@ const userModel = require('../schema/userSchema');
 const ErrorHandler = require('../utils/ErrorHandler');
 const { default: mongoose } = require('mongoose');
 const festivalModel = require('../schema/festivalSchema');
+const sendToken = require('../utils/JWT');
+const createToken = require('../utils/JWT');
+const upload = require('../middlewere/userImage');
 
+// const multer = require('multer');
+
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//         cb(null, 'uploads/');
+//     },
+//     filename: function (req, file, cb) {
+//         cb(null, `${Date.now()}-${file.originalname}`);
+//     }
+// });
+
+// const upload = multer({ storage: storage });
 
 function UserFunction() {
 
 }
 
+UserFunction.prototype.UserCreate = async function (req, res, next) {
+    console.log("Request one", req.body);
+    try {
+        const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
+        const hash = await bcrypt.hash(password, 10);
+        const userExists = await userModel.findOne({ email });
+        if (!userExists) {
+            const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "user" });
+            sendToken(user, 201, res);
+        }
+        else {
+            return res.status(400).json({ success: false, message: "User already exists" });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
 
+// UserFunction.prototype.UserCreate = async function (req, res, next) {
+//     console.log("Request", req.body);
+//     try {
+//         const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
+//         const hash = await bcrypt.hash(password, 10);
+//         const userExists = await userModel.findOne({ email });
+//         if (!userExists) {
+//             const userImage = req.file ? req.file.path : null;
+//             const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "user", image: userImage });
+//             // const user = await userModel.create({ ...req.body, password: hash });
+
+//             sendToken(user, 201, res);
+//         } else {
+//             return res.status(400).json({ success: false, message: "User already exists" });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ success: false, message: error.message });
+//     }
+// }
+
+UserFunction.prototype.UserSignIn = async function (req, res, next) {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: "Email and Password are required" });
+        }
+
+        const user = await userModel.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Invalid Email" });
+        }
+        if (!(await user.isValidPassword(password))) {
+            return res.status(401).json({ success: false, message: "Invalid Password" });
+        }
+
+        if (user.isLogged) {
+            return res.status(401).json({ success: false, message: "User Already Logged in another device" });
+        }
+
+        user.isLogged = true;
+        await user.save();
+        let token = user.getJwtToken();
+        return res.status(200).json({ success: true, message: "Logged in successfully", token: token, user: { email: user.email, username: user.username } });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
 
 
 
 // api/v1/user/list
 UserFunction.prototype.AllUser = async function (req, res, next) {
-    console.log("Request", req);
+    console.log("Request", req.body);
     const { role } = req.query;
 
     try {
