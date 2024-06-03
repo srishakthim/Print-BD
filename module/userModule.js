@@ -5,11 +5,42 @@ const { default: mongoose } = require('mongoose');
 const festivalModel = require('../schema/festivalSchema');
 const sendToken = require('../utils/JWT');
 const createToken = require('../utils/JWT');
+const upload = require('../middlewere/userImage');
 
+// const multer = require('multer');
+
+// const storage = multer.diskStorage({
+//     destination: function (req, file, cb) {
+//         cb(null, 'uploads/');
+//     },
+//     filename: function (req, file, cb) {
+//         cb(null, `${Date.now()}-${file.originalname}`);
+//     }
+// });
+
+// const upload = multer({ storage: storage });
 
 function UserFunction() {
 
 }
+
+// UserFunction.prototype.UserCreate = async function (req, res, next) {
+//     console.log("Request", req.body);
+//     try {
+//         const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
+//         const hash = await bcrypt.hash(password, 10);
+//         const userExists = await userModel.findOne({ email });
+//         if (!userExists) {
+//             const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "Admin" });
+//             sendToken(user, 201, res);
+//         }
+//         else {
+//             return res.status(400).json({ success: false, message: "User already exists" });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ success: false, message: error.message });
+//     }
+// }
 
 UserFunction.prototype.UserCreate = async function (req, res, next) {
     console.log("Request", req.body);
@@ -17,12 +48,11 @@ UserFunction.prototype.UserCreate = async function (req, res, next) {
         const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
         const hash = await bcrypt.hash(password, 10);
         const userExists = await userModel.findOne({ email });
-        // if(userExists)
         if (!userExists) {
-            const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "Admin" });
+            const userImage = req.file ? req.file.path : null;
+            const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "Admin", image: userImage });
             sendToken(user, 201, res);
-        }
-        else {
+        } else {
             return res.status(400).json({ success: false, message: "User already exists" });
         }
     } catch (error) {
