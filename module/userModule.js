@@ -24,6 +24,24 @@ function UserFunction() {
 
 }
 
+UserFunction.prototype.UserCreate = async function (req, res, next) {
+    console.log("Request one", req.body);
+    try {
+        const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
+        const hash = await bcrypt.hash(password, 10);
+        const userExists = await userModel.findOne({ email });
+        if (!userExists) {
+            const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "user" });
+            sendToken(user, 201, res);
+        }
+        else {
+            return res.status(400).json({ success: false, message: "User already exists" });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 // UserFunction.prototype.UserCreate = async function (req, res, next) {
 //     console.log("Request", req.body);
 //     try {
@@ -31,34 +49,18 @@ function UserFunction() {
 //         const hash = await bcrypt.hash(password, 10);
 //         const userExists = await userModel.findOne({ email });
 //         if (!userExists) {
-//             const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "Admin" });
+//             const userImage = req.file ? req.file.path : null;
+//             const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "user", image: userImage });
+//             // const user = await userModel.create({ ...req.body, password: hash });
+
 //             sendToken(user, 201, res);
-//         }
-//         else {
+//         } else {
 //             return res.status(400).json({ success: false, message: "User already exists" });
 //         }
 //     } catch (error) {
 //         res.status(500).json({ success: false, message: error.message });
 //     }
 // }
-
-UserFunction.prototype.UserCreate = async function (req, res, next) {
-    console.log("Request", req.body);
-    try {
-        const { email, username, password, phone, whatsapp, gst, address1, address2, city, pincode, state } = req.body;
-        const hash = await bcrypt.hash(password, 10);
-        const userExists = await userModel.findOne({ email });
-        if (!userExists) {
-            const userImage = req.file ? req.file.path : null;
-            const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "Admin", image: userImage });
-            sendToken(user, 201, res);
-        } else {
-            return res.status(400).json({ success: false, message: "User already exists" });
-        }
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-}
 
 UserFunction.prototype.UserSignIn = async function (req, res, next) {
     try {
@@ -94,7 +96,7 @@ UserFunction.prototype.UserSignIn = async function (req, res, next) {
 
 // api/v1/user/list
 UserFunction.prototype.AllUser = async function (req, res, next) {
-    console.log("Request", req);
+    console.log("Request", req.body);
     const { role } = req.query;
 
     try {
