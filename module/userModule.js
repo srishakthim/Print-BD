@@ -125,7 +125,7 @@ UserFunction.prototype.FetchFestivalList = async function (req, res, next) {
         if (!festivalList) {
             return res.status(400).json({ status: false, message: "Festival list is empty" })
         }
-        return res.status(200).json({ status: false, data:festivalList })
+        return res.status(200).json({ status: true, data:festivalList })
 
 
     } catch (error) {
