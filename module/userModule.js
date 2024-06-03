@@ -32,7 +32,12 @@ UserFunction.prototype.UserCreate = async function (req, res, next) {
         const userExists = await userModel.findOne({ email });
         if (!userExists) {
             const user = await userModel.create({ email, username, password: hash, phone, whatsapp, gst, address1, address2, city, pincode, state, isLogged: false, role: "user" });
-            sendToken(user, 201, res);
+            // sendToken(user, 201, res);
+            return res.status(201).json({ success: false, message: "User created successfully",user:{
+                email:user?.email,
+                username:user?.username
+            } });
+
         }
         else {
             return res.status(400).json({ success: false, message: "User already exists" });
@@ -114,12 +119,12 @@ UserFunction.prototype.AllUser = async function (req, res, next) {
                     "phone": user?.phone,
                     "whatsapp": user?.whatsapp,
                     "gst": user?.gst,
-                    "address1":user?.address1,
+                    "address1": user?.address1,
                     "address2": user?.address2,
                     "city": user?.city,
-                    "pincode":user?.pincode,
+                    "pincode": user?.pincode,
                     "state": user?.state,
-                    "role":user?.role
+                    "role": user?.role
                 }
             })
         })
