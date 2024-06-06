@@ -5,7 +5,7 @@ const festivalModel = require('../schema/festivalSchema');
 const sendToken = require('../utils/JWT');
 const createToken = require('../utils/JWT');
 const ErrorHandler = require('../utils/ErrorHandler');
-
+const jwt = require('jsonwebtoken'); 
 
 function AuthFunction() {
 
@@ -49,52 +49,101 @@ AuthFunction.prototype.SignUp = async function (req, res, next) {
     }
 }
 
+// AuthFunction.prototype.SignIn = async function (req, res, next) {
+//     try {
+//         const { email, password } = req.body;
+
+//         // Define default email and password
+//         const defaultEmail = "printadmin@gmail.com";
+//         const defaultPassword = "printadmin";
+
+//         if (!email || !password) {
+//             return res.status(400).json({ success: false, message: "Email and Password are required" });
+//         }
+
+//         // Check if the provided credentials match the default credentials
+//         if (email === defaultEmail && password === defaultPassword) {
+//             // Create a default user object
+//             const defaultUser = {
+//                 email: defaultEmail,
+//                 username: "PrintAdmin",
+//                 isLogged: false,
+//                 save: async function() {
+//                     // Simulate save operation for the default user
+//                     return Promise.resolve();
+//                 }
+//             };
+
+//             // Check if the default user is already logged in
+//             if (defaultUser.isLogged) {
+//                 return res.status(401).json({ success: false, message: "User Already Logged in another device" });
+//             }
+
+//             defaultUser.isLogged = true;
+//             await defaultUser.save();
+//             let token = defaultUser.getJwtToken();
+//             return res.status(200).json({ success: true, message: "Logged in successfully", token: token, user: { email: defaultUser.email, username: defaultUser.username } });
+//         }
+
+//         // Proceed with the usual authentication process
+//         const user = await userModel.findOne({ email });
+//         if (!user) {
+//             return res.status(401).json({ success: false, message: "Invalid Email" });
+//         }
+//         if (!(await user.isValidPassword(password))) {
+//             return res.status(401).json({ success: false, message: "Invalid Password" });
+//         }
+
+//         if (user.isLogged) {
+//             return res.status(401).json({ success: false, message: "User Already Logged in another device" });
+//         }
+
+//         user.isLogged = true;
+//         await user.save();
+//         let token = user.getJwtToken();
+//         return res.status(200).json({ success: true, message: "Logged in successfully", token: token, user: { email: user.email, username: user.username } });
+
+//     } catch (error) {
+//         res.status(500).json({ success: false, message: error.message });
+//     }
+// }
 AuthFunction.prototype.SignIn = async function (req, res, next) {
     try {
         const { email, password } = req.body;
-
-        // Define default email and password
         const defaultEmail = "printadmin@gmail.com";
         const defaultPassword = "printadmin";
+        const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret'; 
 
         if (!email || !password) {
             return res.status(400).json({ success: false, message: "Email and Password are required" });
         }
 
-        // Check if the provided credentials match the default credentials
         if (email === defaultEmail && password === defaultPassword) {
-            // Create a default user object
-            const defaultUser = {
-                email: defaultEmail,
-                username: "PrintAdmin",
-                getJwtToken: function() {
-                    // Generate a token for the default user
-                    // You should replace this with your actual token generation logic
-                    return "defaultUserToken";
-                },
-                isLogged: false,
-                save: async function() {
-                    // Simulate save operation for the default user
-                    return Promise.resolve();
-                }
-            };
-
-            // Check if the default user is already logged in
-            if (defaultUser.isLogged) {
+        
+            const defaultUserState = await getDefaultUserState(); 
+            
+            if (defaultUserState.isLogged) {
                 return res.status(401).json({ success: false, message: "User Already Logged in another device" });
             }
+           
+            await setDefaultUserLoggedIn(true); 
+            
+            const token = jwt.sign({ email: defaultEmail, username: "PrintAdmin" }, jwtSecret, { expiresIn: '1h' });
+           
+            const defaultUserPayload = {
+                email: defaultEmail,
+                username: "PrintAdmin",
+                getJwtToken: () => token
+            };
 
-            defaultUser.isLogged = true;
-            await defaultUser.save();
-            let token = defaultUser.getJwtToken();
-            return res.status(200).json({ success: true, message: "Logged in successfully", token: token, user: { email: defaultUser.email, username: defaultUser.username } });
+            return sendToken(defaultUserPayload, 200, res);
         }
-
-        // Proceed with the usual authentication process
+        
         const user = await userModel.findOne({ email });
         if (!user) {
             return res.status(401).json({ success: false, message: "Invalid Email" });
         }
+
         if (!(await user.isValidPassword(password))) {
             return res.status(401).json({ success: false, message: "Invalid Password" });
         }
@@ -105,15 +154,21 @@ AuthFunction.prototype.SignIn = async function (req, res, next) {
 
         user.isLogged = true;
         await user.save();
-        let token = user.getJwtToken();
-        return res.status(200).json({ success: true, message: "Logged in successfully", token: token, user: { email: user.email, username: user.username } });
+        return sendToken(user, 200, res);
 
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
+
+};
+
+async function getDefaultUserState() {
+    return { isLogged: global.defaultUserLoggedIn || false };
 }
 
-
+async function setDefaultUserLoggedIn(isLogged) {
+    global.defaultUserLoggedIn = isLogged;
+}
 
 AuthFunction.prototype.ForgetPassword = async function (req, res, next) {
     try {
