@@ -55,7 +55,9 @@ const userSchema = new mongoose.Schema({
     role:{
         type:String
     },
-    // image: String 
+    image:{
+        type:String
+    } 
 
 })
 

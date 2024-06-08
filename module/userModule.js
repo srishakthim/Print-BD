@@ -5,7 +5,6 @@ const { default: mongoose } = require('mongoose');
 const festivalModel = require('../schema/festivalSchema');
 const sendToken = require('../utils/JWT');
 const createToken = require('../utils/JWT');
-const upload = require('../middlewere/userImage');
 
 // const multer = require('multer');
 
